@@ -1,0 +1,44 @@
+/* Dark gradient background */
+body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #071a33, #032141);
+    color: #f5f7fa;
+}
+
+/* Navigation buttons enlarge when user hovers over them */
+.nav-button {
+    transition: transform 180ms ease, filter 180ms ease;
+    background-color: #6610f2;
+}
+.nav-button:hover {
+    transform: scale(1.1);
+    filter: brightness(1.2);
+    background-color: #6610f2;
+}
+
+/* Class for Cal Sans font*/
+.cal-sans {
+    font-family: "Cal Sans", sans-serif;
+}
+
+/* Animation for sliding text in from left side of screen*/
+@keyframes fade-slide-in {
+    from {
+        opacity: 0;
+        transform: translateX(-60vw);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0vw);
+    }
+}
+
+.fade-slide-in {
+    animation: fade-slide-in 700ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fade-slide-in {
+        animation: none;
+    }
+}
