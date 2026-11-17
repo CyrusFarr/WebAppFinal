@@ -6,6 +6,20 @@
   {% if user.is_authenticated %}
     Welcome, {{ user.username }}.
   {% else %}
-    <p>You are not logged in</p>
+    <h1 class="cal-sans mt-2 fade-slide-in text-center">Welcome to PortfolioIQ</h1>
+    <!-- Container for clipart images when user is signed out -->
+    <div class="graphics mt-3 container-fluid">
+      <div class="row">
+        <div class="col ms-5 me-5">
+          <img src="static/img/trading-main-img.png" class="fade-in-1" alt="Investment" width="250" height="250">
+        </div>
+        <div class="col ms-5 me-5">
+          <img src="static/img/moneybag-gold.png" class="fade-in-2" alt="Moneybag" width="250" height="250">
+        </div>
+        <div class="col ms-5 me-5">
+          <img src="static/img/magnifying-glass.png" class="fade-in-3" alt="Magnifying Glass" width="250" height="250">
+        </div>
+      </div>
+    </div>
   {% endif %}
 {% endblock content %}
