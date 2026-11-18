@@ -88,3 +88,51 @@ body {
     animation: fade-in-3 1.5s ease-out both;
     animation-delay: 3s;
 }
+
+.watchlist-page {
+    padding-top: 2rem;
+    padding-bottom: 3rem;
+}
+
+.watchlist-heading {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(180, 205, 235, 0.25);
+}
+
+.watchlist-heading h1 {
+    margin-bottom: 0.25rem;
+}
+
+.watchlist-heading p {
+    margin-bottom: 0;
+    color: #b7c7dc;
+}
+
+.watchlist-table {
+    --bs-table-bg: rgba(0, 0, 0, 0.45);
+    --bs-table-color: #f5f7fa;
+    --bs-table-border-color: rgba(180, 205, 235, 0.18);
+    --bs-table-hover-bg: rgba(24, 55, 91, 0.8);
+    --bs-table-hover-color: #ffffff;
+}
+
+.watchlist-table thead th {
+    color: #b7c7dc;
+    font-weight: 600;
+}
+
+.watchlist-symbol {
+    color: #ffffff;
+    font-weight: 700;
+}
+
+.watchlist-empty {
+    padding: 2rem 0;
+    color: #b7c7dc;
+}
+
+.watchlist-empty h2 {
+    color: #f5f7fa;
+    font-size: 1.25rem;
+}
