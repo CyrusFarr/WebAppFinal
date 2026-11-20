@@ -1,0 +1,67 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Stock Dashboard</h2>
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Apple (AAPL)</h5>
+                    <h3 class="card-text">
+                        $<span id="aapl-price">Loading...</span>
+                        <form method="POST" action="{% url 'add_to_watchlist' %}" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="symbol" value="AAPL">
+                            <button type="submit" class="btn btn-sm btn-primary ms-2">Add to Watchlist</button>
+                        </form>
+                    </h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Google (GOOGL)</h5>
+                    <h3 class="card-text">
+                        $<span id="googl-price">Loading...</span>
+                        <form method="POST" action="{% url 'add_to_watchlist' %}" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="symbol" value="GOOGL">
+                            <button type="submit" class="btn btn-sm btn-primary ms-2">Add to Watchlist</button>
+                        </form>
+                    </h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const protocol = window.location.protocol === "https:"
+        ? "wss:"
+        : "ws:";
+
+    const socket = new WebSocket(
+        `${protocol}//${window.location.host}/ws/stocks/`
+    );
+
+    socket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        const price = Number(data.price);
+
+        if (!Number.isFinite(price)) return;
+
+        if (data.symbol === "AAPL") {
+            document.getElementById("aapl-price").textContent =
+                price.toFixed(2);
+        } else if (data.symbol === "GOOGL") {
+            document.getElementById("googl-price").textContent =
+                price.toFixed(2);
+        }
+    };
+</script>
+{% endblock %}
