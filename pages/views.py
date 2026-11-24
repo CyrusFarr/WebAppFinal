@@ -1,53 +1,68 @@
+from typing import Any
+from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 from django.views.generic import TemplateView
 from .models import WatchlistItem, Watchlist, Stock
 from .services import get_market_snapshot, attach_asset_types
-from django.contrib.auth.mixins import LoginRequiredMixin #Redirects to login page if user is not logged in
+from django.contrib.auth.mixins import (
+    LoginRequiredMixin,
+)  # Redirects to login page if user is not logged in
+
 
 class HomePageView(TemplateView):
     """Displays the home page with a market snapshot and watchlist information."""
+
     template_name = "home.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["market_data"] = attach_asset_types(get_market_snapshot([
-            "^GSPC", "^DJI", "^IXIC", "^RUT", "AAPL", "MSFT", "GOOG", "NVDA"]
-            ))
-    
+        context["market_data"] = attach_asset_types(
+            get_market_snapshot(
+                ["^GSPC", "^DJI", "^IXIC", "^RUT", "AAPL", "MSFT", "GOOG", "NVDA"]
+            )
+        )
+
         if self.request.user.is_authenticated:
             context["watchlist_symbols"] = set(
-                Watchlist.objects.filter(user=self.request.user)
-                .values_list("stocks__ticker_code", flat=True)
+                Watchlist.objects.filter(user=self.request.user).values_list(
+                    "stocks__ticker_code", flat=True
+                )
             )
         else:
             context["watchlist_symbols"] = set()
         return context
 
 
-
 class WatchlistView(LoginRequiredMixin, TemplateView):
     """Displays the user's watchlist with real-time stock data."""
+
     template_name = "watchlist.html"
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         watchlist, _ = Watchlist.objects.get_or_create(user=self.request.user)
         symbols = list(watchlist.stocks.values_list("ticker_code", flat=True))
-        context["stocks"] = attach_asset_types(get_market_snapshot(symbols)) if symbols else []
+        context["stocks"] = (
+            attach_asset_types(get_market_snapshot(symbols)) if symbols else []
+        )
         return context
-        
+
 
 class AddToWatchlistView(LoginRequiredMixin, View):
     """Add a stock to the user's watchlist."""
+
     http_method_names = ["post"]
 
     def post(self, request, *args, **kwargs):
         # Retrieves the stock symbol from the POST data, normalizes it, and adds it to the user's watchlist if valid.
         symbol = request.POST.get("symbol", "").strip().upper()
         if symbol and len(symbol) <= 15:
-            stock, _ = Stock.objects.get_or_create(ticker_code=symbol)
+            stock, _ = Stock.objects.get_or_create(
+                ticker_code=symbol,
+                defaults={"asset_type": Stock.infer_asset_type(symbol)},
+            )
             watchlist, _ = Watchlist.objects.get_or_create(user=request.user)
             WatchlistItem.objects.get_or_create(watchlist=watchlist, stock=stock)
 
@@ -65,6 +80,7 @@ class AddToWatchlistView(LoginRequiredMixin, View):
 
 class RemoveFromWatchlistView(LoginRequiredMixin, View):
     """Remove a stock to the user's watchlist"""
+
     http_method_names = ["post"]
 
     def post(self, request, *args, **kwargs):
@@ -81,3 +97,22 @@ class RemoveFromWatchlistView(LoginRequiredMixin, View):
         ):
             return redirect(next_url)
         return redirect("watchlist")
+
+
+class DashboardView(LoginRequiredMixin, TemplateView):
+    template_name = "dashboard.html"
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+
+        context["market_data"] = attach_asset_types(
+            get_market_snapshot(["AAPL", "MSFT", "GOOG", "NVDA"])
+        )
+
+        return context
+
+
+# Expose market data as a JSON API
+def market_api_view(request):
+    data = get_market_snapshot()
+    return JsonResponse({"results": data})

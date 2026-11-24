@@ -1,0 +1,70 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Stock Dashboard</h2>
+
+    <div class="row g-3">
+        {% for stock in market_data %}
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        {{ stock.display_name }} ({{ stock.ticker_code }})
+                    </h5>
+
+                    {% if stock.error %}
+                        <p>Price Unavailable</p>
+                        {% else %}
+                            <h3 class="card-text">
+                                $<span id="{{ stock.ticker_code|lower }}-price">{{ stock.price }}
+                                </span>
+                            </h3>
+
+                            <p class="{% if stock.is_positive %}text-success{% else %}text-danger{% endif %}">
+                                {{ stock.change }} ({{ stock.pct_change }}%)
+                            </p>
+                            {% endif %}
+
+                            <form method="POST" action="{% url 'add_to_watchlist' %}">
+                                {% csrf_token %}
+
+                                <input type="hidden" name="symbol"
+                                    value="{{ stock.ticker_code }}">
+
+                                <button type="submit" class="btn btn-sm btn-primary">
+                                    Add to Watchlist
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+<script>
+    const protocol = window.location.protocol === "https:"
+        ? "wss:"
+        : "ws:";
+
+    const socket = new WebSocket(
+        `${protocol}//${window.location.host}/ws/stocks/`
+    );
+
+    socket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+
+        if (data.status !== "success") return;
+
+        const priceElement = document.getElementById(
+            `${data.symbol.toLowerCase()}-price`
+        );
+
+        if (priceElement) {
+            priceElement.textContent = data.price;
+        }
+    };
+</script>
+{% endblock content %}

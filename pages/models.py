@@ -3,7 +3,8 @@ from django.conf import settings
 
 
 class Stock(models.Model):
-    """ Represents a stock, index, or ETF with its ticker code, display name, and asset type."""
+    """Represents a stock, index, or ETF with its ticker code, display name, and asset type."""
+
     class AssetType(models.TextChoices):
         # Defines the types of assets that can be represented in the Stock model.
         STOCK = "STK", "Stock"
@@ -26,17 +27,15 @@ class Stock(models.Model):
             return Stock.AssetType.INDEX
         return Stock.AssetType.STOCK
 
-
     def __str__(self):
         return f"{self.display_name} - {self.ticker_code}"
 
 
 class Watchlist(models.Model):
     """Watchlist model that associates a user with multiple stocks through WatchlistItem."""
+
     user = models.OneToOneField(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="watchlist"
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="watchlist"
     )
 
     stocks = models.ManyToManyField(
@@ -48,20 +47,18 @@ class Watchlist(models.Model):
     def __str__(self):
         return f"{self.user}'s watchlist"
 
+
 class WatchlistItem(models.Model):
     """Intermediate model to represent the many-to-many relationship between Watchlist and Stock."""
+
     watchlist = models.ForeignKey(
-        Watchlist, 
-        on_delete=models.CASCADE,
-        related_name="items"
-        )
+        Watchlist, on_delete=models.CASCADE, related_name="items"
+    )
 
     stock = models.ForeignKey(
-        Stock, 
-        on_delete=models.CASCADE, 
-        related_name="watchlist_items"
-        )
-        
+        Stock, on_delete=models.CASCADE, related_name="watchlist_items"
+    )
+
     added_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
