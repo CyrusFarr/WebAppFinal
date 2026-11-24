@@ -1,12 +1,13 @@
 import logging
 import yfinance as yf
 from django.core.cache import cache
+from .models import Stock
 
 # Set up a logger for this module
 logger = logging.getLogger(__name__)        
 
 # dictionary to map symbols to display names
-DISPLAY_NAMES = {               
+COMPANIES = {               
     "^GSPC": "S&P 500",
     "^DJI": "Dow Jones",
     "^IXIC": "Nasdaq",
@@ -34,7 +35,9 @@ def get_market_snapshot(symbols=None):
     # Check if the data is already cached
     cached_data = cache.get(cache_key)
     if cached_data is not None:
-        return cached_data
+        by_symbol = {item["ticker_code"]: item for item in cached_data}
+        return [by_symbol[s] for s in normalized_symbols if s in by_symbol]
+
 
     results = []
 
@@ -42,7 +45,7 @@ def get_market_snapshot(symbols=None):
     tickers = yf.Tickers(" ".join(normalized_symbols))
 
     for symbol in normalized_symbols:
-        display_name = DISPLAY_NAMES.get(symbol, symbol)       # Look up display name or default to symbol
+        company = COMPANIES.get(symbol, symbol)       # Look up display name or default to symbol
         
         # wraps the data extraction in an error handler because yfinace can frequently throw exceptions on bad tickers or network timeouts
         try:
@@ -56,7 +59,7 @@ def get_market_snapshot(symbols=None):
                 pct_change = (change / prev_close) * 100
 
                 results.append({
-                    "display_name": display_name,
+                    "company": company,
                     "ticker_code": symbol,
                     "price": f"{price:,.2f}",
                     "change": f"{change:+,.2f}",  # Adds '+' sign for positive gains
@@ -69,7 +72,7 @@ def get_market_snapshot(symbols=None):
                 # runs if yfinance returned None for the price flagging item as an error
                 logger.warning("Price data missing for %s", symbol)
                 results.append({
-                    "display_name": display_name, 
+                    "company": company, 
                     "ticker_code": symbol, 
                     "error": True
                     })
@@ -78,13 +81,26 @@ def get_market_snapshot(symbols=None):
         except Exception as e:
             logger.warning("Error fetching %s: %s", symbol, e)
             results.append({
-                "display_name": display_name, 
+                "company": company, 
                 "ticker_code": symbol, 
                 "error": True
                 })
 
-    # checks if at least one tikcer succeeded before caching the results to avoid caching a full error response
+    # checks if at least one ticker succeeded before caching the results to avoid caching a full error response
     if any(not item["error"] for item in results):
         cache.set(cache_key, results, timeout=300)
 
     return results
+
+
+def attach_asset_types(rows):
+    symbols = [row["ticker_code"] for row in rows]
+    stored = dict(
+        Stock.objects.filter(ticker_code__in=symbols)
+        .values_list("ticker_code", "asset_type")
+    )
+    for row in rows:
+        code = stored.get(row["ticker_code"], Stock.infer_asset_type(row["ticker_code"]))
+        row["asset_type"] = code
+        row["asset_type_label"] = Stock.AssetType(code).label
+    return rows

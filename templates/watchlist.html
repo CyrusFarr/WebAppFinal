@@ -18,15 +18,37 @@
                         <th scope="col">Company</th>
                         <th scope="col">Price</th>
                         <th scope="col">Change</th>
+                        <!--add a visually hidden to fix column header for button-->
+                        <th scope="col"><span class="visually-hidden">Actions</span></th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for stock in stocks %}
                         <tr>
-                            <td class="watchlist-symbol">{{ stock.symbol }}</td>
-                            <td>{{ stock.company_name|default:"-" }}</td>
-                            <td>{{ stock.price|default:"-" }}</td>
-                            <td>{{ stock.change_percent|default:"-" }}</td>
+                            <!--The "watchlist-symbol" class is used to style the symbol and asset type label together in the same cell-->
+                            <td class="watchlist-symbol">
+                                {{ stock.ticker_code }}
+                                <small class="text-info d-block">{{ stock.asset_type_label }}</small>
+                            </td>
+                            <td>{{ stock.company }}</td>
+                            {% if stock.error %}
+                                <td colspan="2" class="text-muted">Data Unavailable</td>
+                            {% else %}
+                                <td>${{ stock.price }}</td>
+                                <!-- The "text-success" class is applied if the stock's change is positive, and "text-danger" if negative, to visually indicate performance. -->
+                                <td class="{% if stock.is_positive %}text-success{% else %}text-danger{% endif %}">
+                                    {{ stock.change }} ({{ stock.pct_change }}%)
+                                </td>
+                            {% endif %}
+                            <td class="text-end">
+                                <!-- The form below allows users to remove a stock from their watchlist. It submits a POST request to the "remove_from_watchlist" URL with the stock's ticker code and the current page's path for redirection after the action. -->
+                                <form action="{% url 'remove_from_watchlist' %}" method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="symbol" value="{{ stock.ticker_code }}">
+                                    <input type="hidden" name="next" value="{{ request.path }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                                </form>
+                            </td>
                         </tr>
                     {% endfor %}
                 </tbody>

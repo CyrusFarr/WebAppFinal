@@ -23,26 +23,43 @@
     </div>
   {% endif %}
 
-  <h2>Market Overview</h2>
+
   <!-- Market Data Cards-->
-  <div class="container mt-4">
+  <section class="container mt-4">
+    <h2>Market Overview</h2>
     <div class="row">
-      {% for item in market_data %}
+      {% for stock in market_data %}
         <div class="col-md-3">
           <div class="card mb-4 p-3 shadow-sm">
-            <h5 class="mb-0">{{ item.display_name }}</h5>
-            <small class="text-muted mb-2">{{ item.ticker_code }}</small>
-            {% if item.error %}
+            <h5 class="mb-0">{{ stock.company }}</h5>
+            <small class="text-muted mb-2">{{ stock.ticker_code }} · {{ stock.asset_type_label }}</small>
+            {% if stock.error %}
               <span class="text-muted">Unavailable</span>
             {% else %}
-              <p class="fs-4 mb-1">${{ item.price }}</p>
-              <span class="{% if item.is_positive %}text-success{% else %}text-danger{% endif %}">
-                {% if item.is_positive %}+{% endif %}{{ item.change }} ({{ item.pct_change }}%)
+              <p class="fs-4 mb-1">${{ stock.price }}</p>
+              <span class="{% if stock.is_positive %}text-success{% else %}text-danger{% endif %}">
+                {{ stock.change }} ({{ stock.pct_change }}%)
               </span>
+            {% endif %}
+
+
+            <!-- Watchlist Toggle Button (authenticated users, tickers) -->
+            {% if user.is_authenticated %}
+              <form method="post" class="mt-2"
+                    action="{% if stock.ticker_code in watchlist_symbols %}{% url 'remove_from_watchlist' %}{% else %}{% url 'add_to_watchlist' %}{% endif %}">
+                {% csrf_token %}
+                <input type="hidden" name="symbol" value="{{ stock.ticker_code }}">
+                <input type="hidden" name="next" value="{{ request.path }}">
+                {% if stock.ticker_code in watchlist_symbols %}
+                  <button type="submit" class="btn btn-sm btn-outline-danger w-100">Remove from Watchlist</button>
+                {% else %}
+                  <button type="submit" class="btn btn-sm btn-primary w-100">+ Add to Watchlist</button>
+                {% endif %}
+              </form>
             {% endif %}
           </div>
         </div>
       {% endfor %}
     </div>
-  </div>
+  </section>
 {% endblock content %}
