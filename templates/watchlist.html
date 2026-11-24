@@ -26,35 +26,38 @@
                 </thead>
 
                 <tbody>
-                    {% for stock in stocks %}
+                    {% for stock in market_data %}
                         <tr>
                             <td class="watchlist-symbol">
-                                {{ stock.symbol }}
+                                {{ stock.ticker_code }}
                             </td>
 
                             <td>
-                                {{ stock.company_name|default:"-" }}
+                                {{ stock.display_name }}
+
                             </td>
+                            {% if stock.error %}
+                            <td>Unavailable</td>
+                            <td>-</td>
+                            {% else %}
+                            <td>${{ stock.price }}</td>
 
                             <td>
-                                {{ stock.price|default:"-" }}
+                                <span class="{% if stock.is_positive %}text-success{% else %}text-danger{% endif %}">
+                                {{ stock.change }} ({{ stock.pct_change }})
+                                </span>
                             </td>
+                                 {% endif %}
+                                 <td>
 
-                            <td>
-                                {{ stock.change_percent|default:"-" }}
-                            </td>
-
-                            <td>
                                 <form method="POST"
                                       action="{% url 'remove_from_watchlist' %}">
                                     {% csrf_token %}
-
                                     <input
                                         type="hidden"
                                         name="symbol"
-                                        value="{{ stock.symbol }}"
+                                        value="{{ stock.ticker_code }}"
                                     >
-
                                     <button
                                         type="submit"
                                         class="btn btn-outline-danger btn-sm">

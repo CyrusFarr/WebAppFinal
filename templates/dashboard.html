@@ -6,39 +6,43 @@
     <h2 class="mb-4">Stock Dashboard</h2>
 
     <div class="row g-3">
+        {% for stock in market_data %}
         <div class="col-md-6">
             <div class="card shadow-sm h-100">
                 <div class="card-body">
-                    <h5 class="card-title">Apple (AAPL)</h5>
-                    <h3 class="card-text">
-                        $<span id="aapl-price">Loading...</span>
-                        <form method="POST" action="{% url 'add_to_watchlist' %}" class="d-inline">
-                            {% csrf_token %}
-                            <input type="hidden" name="symbol" value="AAPL">
-                            <button type="submit" class="btn btn-sm btn-primary ms-2">Add to Watchlist</button>
-                        </form>
-                    </h3>
-                </div>
-            </div>
-        </div>
+                    <h5 class="card-title">
+                        {{ stock.display_name }} ({{ stock.ticker_code }})
+                    </h5>
 
-        <div class="col-md-6">
-            <div class="card shadow-sm h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Google (GOOGL)</h5>
-                    <h3 class="card-text">
-                        $<span id="googl-price">Loading...</span>
-                        <form method="POST" action="{% url 'add_to_watchlist' %}" class="d-inline">
-                            {% csrf_token %}
-                            <input type="hidden" name="symbol" value="GOOGL">
-                            <button type="submit" class="btn btn-sm btn-primary ms-2">Add to Watchlist</button>
-                        </form>
-                    </h3>
+                    {% if stock.error %}
+                        <p>Price Unavailable</p>
+                        {% else %}
+                            <h3 class="card-text">
+                                $<span id="{{ stock.ticker_code|lower }}-price">{{ stock.price }}
+                                </span>
+                            </h3>
+
+                            <p class="{% if stock.is_positive %}text-success{% else %}text-danger{% endif %}">
+                                {{ stock.change }} ({{ stock.pct_change }}%)
+                            </p>
+                            {% endif %}
+
+                            <form method="POST" action="{% url 'add_to_watchlist' %}">
+                                {% csrf_token %}
+
+                                <input type="hidden" name="symbol"
+                                    value="{{ stock.ticker_code }}">
+
+                                <button type="submit" class="btn btn-sm btn-primary">
+                                    Add to Watchlist
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            {% endfor %}
         </div>
     </div>
-</div>
 
 <script>
     const protocol = window.location.protocol === "https:"
@@ -51,17 +55,16 @@
 
     socket.onmessage = function(e) {
         const data = JSON.parse(e.data);
-        const price = Number(data.price);
 
-        if (!Number.isFinite(price)) return;
+        if (data.status !== "success") return;
 
-        if (data.symbol === "AAPL") {
-            document.getElementById("aapl-price").textContent =
-                price.toFixed(2);
-        } else if (data.symbol === "GOOGL") {
-            document.getElementById("googl-price").textContent =
-                price.toFixed(2);
+        const priceElement = document.getElementById(
+            `${data.symbol.toLowerCase()}-price`
+        );
+
+        if (priceElement) {
+            priceElement.textContent = data.price;
         }
     };
 </script>
-{% endblock %}
+{% endblock content %}
